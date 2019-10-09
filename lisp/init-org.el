@@ -22,8 +22,52 @@
 
 ;;; Code:
 
+;(setq org-modules
+;  (quote
+;   (org-bbdb org-bibtex org-ctags org-docview org-eww org-gnus org-id org-info org-irc org-mhe org-rmail org-w3m org-mac-link org-notmuch org-secretary)))
+
+(after-load 'org
+(nconc org-modules
+       '(
+         org-capture
+         org-habit
+         org-id
+         org-protocol
+         org-w3m
+         org-notmuch
+         org-secretary
+         ))
+)
+
+;; My custom configuration
+(setq my-org-root "~/Documents/org-mode/")
+
+;; FIXME: Why does (setq org-agenda-files 'my-gtd-agenda-files) not work?
+(setq org-agenda-files (quote (
+                               "~/Documents/org-mode/agenda/gtd.org"
+                               "~/Documents/org-mode/agenda/inbox.org"
+                               "~/Documents/org-mode/agenda/tickler.org"
+                               "~/Documents/org-mode/meeting_notes.org")))
+;; setup my agenda files
+(setq my-gtd-agenda-files (concatenate 'string my-org-root "agenda/"))
+
+
+;; define my file names relative to my-org-root
+(setq my-gtd-inbox (concatenate 'string my-gtd-agenda-files "inbox.org"))
+(setq my-gtd-reviews (concatenate 'string my-org-root "reviews.org"))
+(setq my-gtd-tickler (concatenate 'string my-gtd-agenda-files "tickler.org"))
+(setq my-gtd-gtd (concatenate 'string my-gtd-agenda-files "gtd.org"))
+(setq my-gtd-someday (concatenate 'string my-org-root "someday.org"))
+(setq my-gtd-journal (concatenate 'string my-org-root "journal.org"))
+(setq my-gtd-meeting_notes (concatenate 'string my-org-root "meeting_notes.org"))
+
 (when *is-a-mac*
   (maybe-require-package 'grab-mac-link))
+
+;; (after-load 'org
+;; (when *is-a-mac*
+;;     (add-to-list 'org-modules 'org-mac-link t))
+;; )
 
 (maybe-require-package 'org-cliplink)
 
@@ -41,7 +85,10 @@
 
 
 ;; Various preferences
-(setq org-log-done t
+;; Record a timestamp when a task is marked as done
+;; Log into a separate drawer to keey it clean
+(setq org-log-done 'time
+      org-log-into-drawer t
       org-edit-timestamp-down-means-later t
       org-hide-emphasis-markers t
       org-catch-invisible-edits 'show
@@ -51,6 +98,28 @@
       org-export-kill-product-buffer-when-displayed t
       org-tags-column 80)
 
+;;; org-secretary
+
+;;(require-package 'org-secretary)
+;; Default identity for org-secretary
+(setq org-sec-me "jens_neuhalfen")
+(defun my/org-sec-inform-with-view (par &optional who)
+  "Select tasks marked as inform=who, where who
+   defaults to the value of org-sec-with."
+  (org-tags-view '(4) (join (split-string (if who
+                                              who
+                                            (org-sec-get-with)))
+                            "|" "inform={" "}")))
+
+;;; org-id
+;; https://github.com/tkf/org-mode/blob/master/lisp/org-id.el
+;;(require 'org-id)
+
+(setq org-id-link-to-org-use-id t)
+(setq org-id-method  'uuid)
+(setq org-id-track-globally t)
+(setq org-id-locations-file (convert-standard-filename
+                             "~/Documents/org-mode/_org-internal/org-id-locations"))
 
 ;; Lots of stuff from http://doc.norang.ca/org-mode.html
 
@@ -93,7 +162,7 @@
             (lambda () (add-hook 'window-configuration-change-hook 'org-agenda-align-tags nil t))))
 
 
-
+
 
 (maybe-require-package 'writeroom-mode)
 
@@ -136,28 +205,102 @@ typical word processor."
 
 ;;(add-hook 'org-mode-hook 'buffer-face-mode)
 
-
 (setq org-support-shift-select t)
-
+
 ;;; Capturing
 
 (global-set-key (kbd "C-c c") 'org-capture)
 
 (setq org-capture-templates
-      `(("t" "todo" entry (file "")  ; "" => `org-default-notes-file'
-         "* NEXT %?\n%U\n" :clock-resume t)
-        ("n" "note" entry (file "")
-         "* %? :NOTE:\n%U\n%a\n" :clock-resume t)
+      '(
+        ;;  TASK for someone else
+	("t" "TODO")
+        ;; TASK for someone else
+        ("tf" "TASK      (f) Task for someone else" entry (file my-gtd-inbox)
+         "* TASK %? :%^G:
+:PROPERTIES:
+:dowith:
+:inform:
+:END:
+:LOGBOOK:
+- State \"TASK\"       from \"\"           %U
+:END:" :empty-lines 1)
+        ;; TODO     (t) Todo template
+        ("tt" "TODO      (t) Todo" entry (file my-gtd-inbox)
+         "* TODO %?
+:PROPERTIES:
+:dowith:
+:inform:
+:END:
+:LOGBOOK:
+- State \"TODO\"       from \"\"           %U
+:END:" :empty-lines 1)
+
+        ;; WAITING  (w) Waiting template
+        ("tw" "WAITING   (w) Waiting" entry (file my-gtd-inbox)
+         "* WAITING %? :%^G:
+:PROPERTIES:
+:dowith:
+:inform:
+:END:
+:LOGBOOK:
+- State \"WAITING\"    from \"\"           %U
+:END:" :empty-lines 1)
+        ;; CANCELLED(x) Cancelled template
+        ("tx" "CANCELLED (x) Cancelled" entry (file my-gtd-inbox)
+         "* CANCELLED %?
+:PROPERTIES:
+:inform:
+:END:
+:LOGBOOK:
+- State \"CANCELLED\"       from \"\"           %U
+:END:" :empty-lines 1)
+
+        ;; DONE     (d) Done template
+        ("td" "DONE      (d) Done" entry (file my-gtd-inbox)
+         "* DONE %?
+:PROPERTIES:
+:inform:
+:END:
+:LOGBOOK:
+- State \"DONE\"       from \"\"           %U
+:END:" :empty-lines 1)
+
+        ("j" "Journal" entry (file+datetree my-gtd-journal)
+         "* %?\nEntered on %U\n  %i")
+
+	("n" "Notes")
+        ("nn" "Note" entry (file+datetree my-gtd-inbox)
+         "* NOTE %?\nEntered on %U\n  %i
+:PROPERTIES:
+:inform:
+:END:
+")
+        ("nm" "generic meeting notes" entry (file my-gtd-inbox)
+         (file "~/Documents/org-mode/_templates/meeting_note.org"))
+        ("n1" "1:1 meeting" entry (file my-gtd-inbox)
+         (file "~/Documents/org-mode/_templates/meeting_note_1on1.org"))
+
+	("r" "Reviews")
+        ("rp" "Review: daily planing" entry (file+datetree my-gtd-reviews)
+         (file "~/Documents/org-mode/_templates/morning_review.org"))
+        ("rd" "Review: Daily Afternoon Review" entry (file+datetree my-gtd-reviews)
+         (file "~/Documents/org-mode/_templates/dailyreview.org"))
+        ("rw" "Review: Weekly Review" entry (file+datetree my-gtd-reviews)
+         (file "~/Documents/org-mode/_templates/weeklyreview.org"))
+
+        ("T" "Tickler" entry (file+headline my-gtd-tickler "Tickler")
+         "* %i%? \n %U")
         ))
 
-
-
 ;;; Refiling
 
 (setq org-refile-use-cache nil)
 
-;; Targets include this file and any file contributing to the agenda - up to 5 levels deep
-(setq org-refile-targets '((nil :maxlevel . 5) (org-agenda-files :maxlevel . 5)))
+(setq org-refile-targets '((my-gtd-gtd :maxlevel . 2)
+                           (my-gtd-meeting_notes :level . 2)
+                           (my-gtd-someday :level . 1)
+                           (my-gtd-tickler :maxlevel . 2)))
 
 (after-load 'org-agenda
   (add-to-list 'org-agenda-after-show-hook 'org-show-entry))
@@ -190,30 +333,71 @@ typical word processor."
 ;; Allow refile to create parent tasks with confirmation
 (setq org-refile-allow-creating-parent-nodes 'confirm)
 
-
-;;; To-do settings
 
-(setq org-todo-keywords
-      (quote ((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d!/!)")
-              (sequence "PROJECT(p)" "|" "DONE(d!/!)" "CANCELLED(c@/!)")
-              (sequence "WAITING(w@/!)" "DELEGATED(e!)" "HOLD(h)" "|" "CANCELLED(c@/!)")))
-      org-todo-repeat-to-state "NEXT")
+;;; To-do settings
 
 (setq org-todo-keyword-faces
       (quote (("NEXT" :inherit warning)
-              ("PROJECT" :inherit font-lock-string-face))))
+              ("prj" :inherit font-lock-string-face))))
+
+;; https://orgmode.org/manual/Tracking-TODO-state-changes.html#Tracking-TODO-state-changes
+;; "!" means timestamp
+;; "@" means note
+;;   I keep todo items for my team members and for me. I encode mine with TODO,
+;;   the team's with TASK:
+(setq org-todo-keywords
+      '(
+        ;; Tasks for me
+        (sequence "TODO(t)" "NEXT(x)" "STARTED(s!)" "WAITING(w@/!)"
+                  "|" "DONE(d!)" "CANCELED(c@)")
+        ;; Tasks for others
+        (sequence "TASK(f@/!)"  "|" "DONE(d!)" "CANCELED(c@)")
+        ;; Meetings
+        (sequence "MEETING" "|" "MEETING_PROTOCOL" "NOTE")
+        ))
 
 
-
 ;;; Agenda views
 
 (setq-default org-agenda-clockreport-parameter-plist '(:link t :maxlevel 3))
 
+;; Aktuelle Zeile in der Agenda hervorheben
+(add-hook 'org-agenda-mode-hook '(lambda () (hl-line-mode 1 )))
 
-(let ((active-project-match "-INBOX/PROJECT"))
 
-  (setq org-stuck-projects
-        `(,active-project-match ("NEXT")))
+;; Don not show tasks tagged as SOEMDAY in the agenda
+(setq org-agenda-filter-preset '("-someday"))
+
+(setq org-agenda-format-date
+      "%Y-%m-%d ---------------------------------------------------------------------")
+
+;; Complex activities are projects, and are marked with the prj tag. They are
+;; supposed to contain todo items, and are considered stuck unless they do.
+;; The prj tag should not be inheritable, because otherwise its tasks will
+;; appear as projects:
+
+(setq org-tags-exclude-from-inheritance '("prj")
+      org-stuck-projects '("+prj/-MAYBE-DONE"
+                           ("TODO" "TASK" "NEXT" "WAITING") ()))
+
+(setq org-todo-keyword-faces
+      '(("TODO" . (:foreground "DarkOrange1" :weight bold))
+        ("MAYBE" . (:foreground "sea green"))
+        ("DONE" . (:foreground "light sea green"))
+        ("CANCELLED" . (:foreground "forest green"))
+        ("TASK" . (:foreground "light blue"))
+        ("MEETING" . (:foreground "gray"))
+        ("NOTE" . (:foreground "gray"))
+        ))
+
+
+;; Skip "done" tasks in agenda, even when schedules/deadline
+;; Use log mode to view them
+(setq org-agenda-skip-deadline-if-done t)
+(setq org-agenda-skip-scheduled-if-done t)
+
+;; show the diary in the agenda
+(setq org-agenda-include-diary t)
 
   (setq org-agenda-compact-blocks t
         org-agenda-sticky t
@@ -225,78 +409,130 @@ typical word processor."
           (todo category-up effort-up)
           (tags category-up effort-up)
           (search category-up))
-        org-agenda-window-setup 'current-window
-        org-agenda-custom-commands
-        `(("N" "Notes" tags "NOTE"
-           ((org-agenda-overriding-header "Notes")
-            (org-tags-match-list-sublevels t)))
-          ("g" "GTD"
-           ((agenda "" nil)
-            (tags "INBOX"
-                  ((org-agenda-overriding-header "Inbox")
-                   (org-tags-match-list-sublevels nil)))
-            (stuck ""
-                   ((org-agenda-overriding-header "Stuck Projects")
-                    (org-agenda-tags-todo-honor-ignore-options t)
-                    (org-tags-match-list-sublevels t)
-                    (org-agenda-todo-ignore-scheduled 'future)))
-            (tags-todo "-INBOX"
-                       ((org-agenda-overriding-header "Next Actions")
-                        (org-agenda-tags-todo-honor-ignore-options t)
-                        (org-agenda-todo-ignore-scheduled 'future)
-                        (org-agenda-skip-function
-                         '(lambda ()
-                            (or (org-agenda-skip-subtree-if 'todo '("HOLD" "WAITING"))
-                                (org-agenda-skip-entry-if 'nottodo '("NEXT")))))
-                        (org-tags-match-list-sublevels t)
-                        (org-agenda-sorting-strategy
-                         '(todo-state-down effort-up category-keep))))
-            (tags-todo ,active-project-match
-                       ((org-agenda-overriding-header "Projects")
-                        (org-tags-match-list-sublevels t)
-                        (org-agenda-sorting-strategy
-                         '(category-keep))))
-            (tags-todo "-INBOX/-NEXT"
-                       ((org-agenda-overriding-header "Orphaned Tasks")
-                        (org-agenda-tags-todo-honor-ignore-options t)
-                        (org-agenda-todo-ignore-scheduled 'future)
-                        (org-agenda-skip-function
-                         '(lambda ()
-                            (or (org-agenda-skip-subtree-if 'todo '("PROJECT" "HOLD" "WAITING" "DELEGATED"))
-                                (org-agenda-skip-subtree-if 'nottododo '("TODO")))))
-                        (org-tags-match-list-sublevels t)
-                        (org-agenda-sorting-strategy
-                         '(category-keep))))
-            (tags-todo "/WAITING"
-                       ((org-agenda-overriding-header "Waiting")
-                        (org-agenda-tags-todo-honor-ignore-options t)
-                        (org-agenda-todo-ignore-scheduled 'future)
-                        (org-agenda-sorting-strategy
-                         '(category-keep))))
-            (tags-todo "/DELEGATED"
-                       ((org-agenda-overriding-header "Delegated")
-                        (org-agenda-tags-todo-honor-ignore-options t)
-                        (org-agenda-todo-ignore-scheduled 'future)
-                        (org-agenda-sorting-strategy
-                         '(category-keep))))
-            (tags-todo "-INBOX"
-                       ((org-agenda-overriding-header "On Hold")
-                        (org-agenda-skip-function
-                         '(lambda ()
-                            (or (org-agenda-skip-subtree-if 'todo '("WAITING"))
-                                (org-agenda-skip-entry-if 'nottodo '("HOLD")))))
-                        (org-tags-match-list-sublevels nil)
-                        (org-agenda-sorting-strategy
-                         '(category-keep))))
-            ;; (tags-todo "-NEXT"
-            ;;            ((org-agenda-overriding-header "All other TODOs")
-            ;;             (org-match-list-sublevels t)))
-            )))))
+        org-agenda-window-setup 'current-window)
+
+
+(setq org-agenda-custom-commands
+      (quote (
+              ("A" "Agenda w. NEXT, WAITING, TASK"
+               ((todo "WAITING")
+                (todo "TASK")
+                (todo "NEXT")
+                (tags "flagged")
+                (agenda "")))
+
+              ("M" "Meeting with *C-c w*"  ((my/org-sec-inform-with-view "inform")
+                                            (org-sec-with-view "TODO dowith")
+                                            (org-sec-where-view "TODO doat")
+                                            (org-sec-assigned-with-view "TASK with")
+                                            (org-sec-stuck-with-view "STUCK with")))
+
+              ("o" .  "Other agendas")
+              ;;              ("gn" "Next Actions" todo "NEXT" ((org-use-tag-inheritance nil)))
+              ("od" "DONE" todo "DONE" ((org-use-tag-inheritance nil)))
+              ;;              ("gw" "Waiting" todo "WAITING")
+              ;;              ("gw" "Waiting" todo "WAITING")
+
+              ;;              ("r" . "Review Workflow")
+
+              ("os" "Stuck projects" ((org-ql-block '(and (not (todo)) (tags "prj") (not (done)) (not (descendants (todo "NEXT")))) ((org-ql-block-header "Stuck Projects")))))
+              ("oS" "Stuck projects2" ((org-ql-block '(not (or ((and (todo "DONE") (descendants (todo "DONE")) (descendants "NEXT"))))))))
+
+              ;;            ("@" . "Location based")
+              ;;          ("@o" "At the office" tags-todo "@office" ((org-agenda-overriding-header "Office")))
+              ;;        ("@h" "At home" tags-todo "@home" ((org-agenda-overriding-header "Home")))
+
+              ("s" . "Secretary")
+              ("sh" "Work todos" tags-todo
+               "-personal-doat={.+}-dowith={.+}/!-TASK"
+               ((org-agenda-todo-ignore-scheduled t)))
+              ("sH" "All work todos" tags-todo "-personal/!-TASK-MAYBE"
+               ((org-agenda-todo-ignore-scheduled nil)))
+              ("sA" "Work todos with doat or dowith" tags-todo
+               "-personal+doat={.+}|dowith={.+}/!-TASK"
+               ((org-agenda-todo-ignore-scheduled nil)))
+              ("sj" "inform, TODO dowith and TASK with"
+               ((my/org-sec-inform-with-view "inform")
+                (org-sec-with-view "TODO dowith")
+                (org-sec-where-view "TODO doat")
+                (org-sec-assigned-with-view "TASK with")
+                (org-sec-stuck-with-view "STUCK with")))
+              ("sJ" "Interactive TODO dowith and TASK with"
+               ((org-sec-who-view "TODO dowith")))
+              )))
+
+;;
+;;        org-agenda-custom-commands
+;;        `(("N" "Notes" tags "NOTE"
+;;           ((org-agenda-overriding-header "Notes")
+;;            (org-tags-match-list-sublevels t)))
+;;          ("g" "GTD"
+;;           ((agenda "" nil)
+;;            (tags "INBOX"
+;;                  ((org-agenda-overriding-header "Inbox")
+;;                   (org-tags-match-list-sublevels nil)))
+;;            (stuck ""
+;;                   ((org-agenda-overriding-header "Stuck Projects")
+;;                    (org-agenda-tags-todo-honor-ignore-options t)
+;;                    (org-tags-match-list-sublevels t)
+;;                    (org-agenda-todo-ignore-scheduled 'future)))
+;;            (tags-todo "-INBOX"
+;;                       ((org-agenda-overriding-header "Next Actions")
+;;                        (org-agenda-tags-todo-honor-ignore-options t)
+;;                        (org-agenda-todo-ignore-scheduled 'future)
+;;                        (org-agenda-skip-function
+;;                         '(lambda ()
+;;                            (or (org-agenda-skip-subtree-if 'todo '("HOLD" "WAITING"))
+;;                                (org-agenda-skip-entry-if 'nottodo '("NEXT")))))
+;;                        (org-tags-match-list-sublevels t)
+;;                        (org-agenda-sorting-strategy
+;;                         '(todo-state-down effort-up category-keep))))
+;;            (tags-todo ,active-project-match
+;;                       ((org-agenda-overriding-header "Projects")
+;;                        (org-tags-match-list-sublevels t)
+;;                        (org-agenda-sorting-strategy
+;;                         '(category-keep))))
+;;            (tags-todo "-INBOX/-NEXT"
+;;                       ((org-agenda-overriding-header "Orphaned Tasks")
+;;                        (org-agenda-tags-todo-honor-ignore-options t)
+;;                        (org-agenda-todo-ignore-scheduled 'future)
+;;                        (org-agenda-skip-function
+;;                         '(lambda ()
+;;                            (or (org-agenda-skip-subtree-if 'todo '("PROJECT" "HOLD" "WAITING" "DELEGATED"))
+;;                                (org-agenda-skip-subtree-if 'nottododo '("TODO")))))
+;;                        (org-tags-match-list-sublevels t)
+;;                        (org-agenda-sorting-strategy
+;;                         '(category-keep))))
+;;            (tags-todo "/WAITING"
+;;                       ((org-agenda-overriding-header "Waiting")
+;;                        (org-agenda-tags-todo-honor-ignore-options t)
+;;                        (org-agenda-todo-ignore-scheduled 'future)
+;;                        (org-agenda-sorting-strategy
+;;                         '(category-keep))))
+;;            (tags-todo "/DELEGATED"
+;;                       ((org-agenda-overriding-header "Delegated")
+;;                        (org-agenda-tags-todo-honor-ignore-options t)
+;;                        (org-agenda-todo-ignore-scheduled 'future)
+;;                        (org-agenda-sorting-strategy
+;;                         '(category-keep))))
+;;            (tags-todo "-INBOX"
+;;                       ((org-agenda-overriding-header "On Hold")
+;;                        (org-agenda-skip-function
+;;                         '(lambda ()
+;;                            (or (org-agenda-skip-subtree-if 'todo '("WAITING"))
+;;                                (org-agenda-skip-entry-if 'nottodo '("HOLD")))))
+;;                        (org-tags-match-list-sublevels nil)
+;;                        (org-agenda-sorting-strategy
+;;                         '(category-keep))))
+;;            ;; (tags-todo "-NEXT"
+;;            ;;            ((org-agenda-overriding-header "All other TODOs")
+;;            ;;             (org-match-list-sublevels t)))
+;;            )))))
 
 
 (add-hook 'org-agenda-mode-hook 'hl-line-mode)
 
-
+
 ;;; Org clock
 
 ;; Save the running clock and all clock history when exiting Emacs, load it on startup
@@ -317,7 +553,7 @@ typical word processor."
       '(:hours "%d" :require-hours t :minutes ":%02d" :require-minutes t))
 
 
-
+
 ;;; Show the clocked-in task - if any - in the header line
 (defun sanityinc/show-org-clock-in-header-line ()
   (setq-default header-line-format '((" " org-mode-line-string " "))))
@@ -334,7 +570,7 @@ typical word processor."
   (define-key org-clock-mode-line-map [header-line mouse-1] 'org-clock-menu))
 
 
-
+
 (when (and *is-a-mac* (file-directory-p "/Applications/org-clock-statusbar.app"))
   (add-hook 'org-clock-in-hook
             (lambda () (call-process "/usr/bin/osascript" nil 0 nil "-e"
@@ -344,20 +580,21 @@ typical word processor."
                                 "tell application \"org-clock-statusbar\" to clock out"))))
 
 
-
+
 ;; TODO: warn about inconsistent items, e.g. TODO inside non-PROJECT
 ;; TODO: nested projects!
 
 
-
+
 ;;; Archiving
 
 (setq org-archive-mark-done nil)
 (setq org-archive-location "%s_archive::* Archive")
 
+;; Confgure org-attach
 
-
-
+;; Use symbolic links to attach files
+(setq org-attach-method (quote lns))
 
 (require-package 'org-pomodoro)
 (setq org-pomodoro-keep-killed-pomodoro-time t)

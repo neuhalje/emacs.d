@@ -92,7 +92,6 @@
 (require 'init-csv)
 (require 'init-erlang)
 (require 'init-javascript)
-(require 'init-php)
 (require 'init-org)
 (require 'init-nxml)
 (require 'init-html)
@@ -132,6 +131,8 @@
 ;;(require 'init-twitter)
 ;; (require 'init-mu)
 (require 'init-ledger)
+
+(require 'init-notmuch)
 ;; Extra packages which don't require any configuration
 
 (require-package 'gnuplot)
