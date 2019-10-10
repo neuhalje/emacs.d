@@ -1,3 +1,4 @@
+# https://docs.travis-ci.com/user/languages/nix/
 language: nix
 
 os:
@@ -15,8 +16,17 @@ env:
   - EMACS_CI=emacs-26-3
   - EMACS_CI=emacs-snapshot
 
+# https://docs.travis-ci.com/user/installing-dependencies/#installing-packages-on-macos
+addons:
+  homebrew:
+    update: true
+    packages:
+    - notmuch
+
 install:
   - bash <(curl https://raw.githubusercontent.com/purcell/nix-emacs-ci/master/travis-install)
+  - if [ $TRAVIS_OS_NAME = linux ]; then nix-env --install notmuch; fi
+
 
 script:
   ./test-startup.sh
