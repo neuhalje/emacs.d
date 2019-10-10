@@ -276,7 +276,7 @@ typical word processor."
          "* %?\nEntered on %U\n  %i")
 
 	("n" "Notes")
-        ("nn" "Note" entry (file+datetree my-gtd-inbox)
+        ("nn" "Note" entry (file my-gtd-inbox)
          "* NOTE %?\nEntered on %U\n  %i
 :PROPERTIES:
 :inform:
