@@ -1,7 +1,7 @@
 ;;; init-org.el --- Org-mode config -*- lexical-binding: t -*-
 ;;; Commentary:
 
-;; Among settings for many aspects of `org-mode', this code includes
+;; +mong settings for many aspects of `org-mode', this code includes
 ;; an opinionated setup for the Getting Things Done (GTD) system based
 ;; around the Org Agenda.  I have an "inbox.org" file with a header
 ;; including
@@ -25,6 +25,11 @@
 ;(setq org-modules
 ;  (quote
 ;   (org-bbdb org-bibtex org-ctags org-docview org-eww org-gnus org-id org-info org-irc org-mhe org-rmail org-w3m org-mac-link org-notmuch org-secretary)))
+
+
+(add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/") t)
+(package-initialize)
+(require-package 'org-plus-contrib)
 
 (after-load 'org
 (nconc org-modules
@@ -60,6 +65,7 @@
 (setq my-gtd-someday (concatenate 'string my-org-root "someday.org"))
 (setq my-gtd-journal (concatenate 'string my-org-root "journal.org"))
 (setq my-gtd-meeting_notes (concatenate 'string my-org-root "meeting_notes.org"))
+(setq my-browser-bookmarks (concatenate 'string my-org-root "bookmarking.org"))
 
 (when *is-a-mac*
   (maybe-require-package 'grab-mac-link))
@@ -100,7 +106,7 @@
 
 ;;; org-secretary
 
-;;(require-package 'org-secretary)
+;;(require 'org-secretary)
 ;; Default identity for org-secretary
 (setq org-sec-me "jens_neuhalfen")
 (defun my/org-sec-inform-with-view (par &optional who)
@@ -291,16 +297,44 @@ typical word processor."
 
         ("T" "Tickler" entry (file+headline my-gtd-tickler "Tickler")
          "* %i%? \n %U")
+
+	("c" "org-protocol capturing")
+           ("cp" "Protocol" entry (file my-gtd-inbox)
+                    "* [[%:link][%^{Title}]]
+:PROPERTIES:
+:CREATED: %U
+:SOURCE:  %:link
+:TITLE:   %:description
+:END:
+
+#+BEGIN_QUOTE
+%i
+#+END_QUOTE
+
+%?")
+            ("cl" "Protocol Link" entry (file my-gtd-inbox)
+                    "* [[%:link][%^{Title}]]
+:PROPERTIES:
+:CREATED: %U
+:SOURCE:  %:link
+:TITLE:   %:description
+:END:
+
+%?")
         ))
 
 ;;; Refiling
 
 (setq org-refile-use-cache nil)
 
-(setq org-refile-targets '((my-gtd-gtd :maxlevel . 2)
+(setq org-refile-targets '(
+                           (my-gtd-gtd :tag . "prj")
+                           (my-gtd-gtd :tag . "refile_target")
                            (my-gtd-meeting_notes :level . 2)
                            (my-gtd-someday :level . 1)
-                           (my-gtd-tickler :maxlevel . 2)))
+                           (my-gtd-tickler :maxlevel . 2)
+                           (my-browser-bookmarks :tag . "refile_target")
+                           ))
 
 (after-load 'org-agenda
   (add-to-list 'org-agenda-after-show-hook 'org-show-entry))
@@ -354,6 +388,8 @@ typical word processor."
         (sequence "TASK(f@/!)"  "|" "DONE(d!)" "CANCELED(c@)")
         ;; Meetings
         (sequence "MEETING" "|" "MEETING_PROTOCOL" "NOTE")
+        ;; org-protocol
+        (sequence "LINK_TO_SORT" "|" "LINK")
         ))
 
 
@@ -376,7 +412,7 @@ typical word processor."
 ;; The prj tag should not be inheritable, because otherwise its tasks will
 ;; appear as projects:
 
-(setq org-tags-exclude-from-inheritance '("prj")
+(setq org-tags-exclude-from-inheritance '("prj" "refile_target")
       org-stuck-projects '("+prj/-MAYBE-DONE"
                            ("TODO" "TASK" "NEXT" "WAITING") ()))
 
