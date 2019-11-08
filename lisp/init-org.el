@@ -22,50 +22,22 @@
 
 ;;; Code:
 
-;(setq org-modules
-;  (quote
-;   (org-bbdb org-bibtex org-ctags org-docview org-eww org-gnus org-id org-info org-irc org-mhe org-rmail org-w3m org-mac-link org-notmuch org-secretary)))
-
-
 (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/") t)
 (package-initialize)
 (require-package 'org-plus-contrib)
 
 (after-load 'org
-(nconc org-modules
-       '(
-         org-capture
-         org-habit
-         org-id
-         org-protocol
-         org-w3m
-         org-notmuch
-         org-secretary
-         ))
-)
-
-;; My custom configuration
-(setq my-org-root "~/Documents/org-mode/")
-
-;; FIXME: Why does (setq org-agenda-files 'my-gtd-agenda-files) not work?
-(setq org-agenda-files (quote (
-                               "~/Documents/org-mode/agenda/gtd.org"
-                               "~/Documents/org-mode/agenda/inbox.org"
-                               "~/Documents/org-mode/agenda/tickler.org"
-                               "~/Documents/org-mode/meeting_notes.org")))
-;; setup my agenda files
-(setq my-gtd-agenda-files (concatenate 'string my-org-root "agenda/"))
-
-
-;; define my file names relative to my-org-root
-(setq my-gtd-inbox (concatenate 'string my-gtd-agenda-files "inbox.org"))
-(setq my-gtd-reviews (concatenate 'string my-org-root "reviews.org"))
-(setq my-gtd-tickler (concatenate 'string my-gtd-agenda-files "tickler.org"))
-(setq my-gtd-gtd (concatenate 'string my-gtd-agenda-files "gtd.org"))
-(setq my-gtd-someday (concatenate 'string my-org-root "someday.org"))
-(setq my-gtd-journal (concatenate 'string my-org-root "journal.org"))
-(setq my-gtd-meeting_notes (concatenate 'string my-org-root "meeting_notes.org"))
-(setq my-browser-bookmarks (concatenate 'string my-org-root "bookmarking.org"))
+            (nconc org-modules
+                   '(
+                     org-capture
+                     org-habit
+                     org-id
+                     org-protocol
+                     org-w3m
+                     org-notmuch
+                     org-secretary
+                     ))
+            )
 
 (when *is-a-mac*
   (maybe-require-package 'grab-mac-link))
@@ -74,6 +46,19 @@
 ;; (when *is-a-mac*
 ;;     (add-to-list 'org-modules 'org-mac-link t))
 ;; )
+
+;; functions to load org-capture templates via function calls
+
+(defun my/get-string-from-file (filePath)
+  "Return FILEPATH's file content."
+  (with-temp-buffer
+    (insert-file-contents filePath)
+    (buffer-string)))
+
+(defun my/org-template-path ()
+  "Return the content of the named template."
+  (my/get-string-from-file (concat  my-gtd-template-dir   (plist-get org-capture-plist :templatename))))
+
 
 (maybe-require-package 'org-cliplink)
 
@@ -282,25 +267,39 @@ typical word processor."
 :inform:
 :END:
 ")
-        ("nm" "generic meeting notes" entry (file my-gtd-inbox)
-         (file "~/Documents/org-mode/_templates/meeting_note.org"))
-        ("n1" "1:1 meeting" entry (file my-gtd-inbox)
-         (file "~/Documents/org-mode/_templates/meeting_note_1on1.org"))
+
+        ("nm" "generic meeting notes" plain
+         (file my-gtd-inbox)
+         (function my/org-template-path)
+         :templatename "meeting_note.org")
+
+        ("n1" "1:1 meeting" plain
+         (file my-gtd-inbox)
+         (function my/org-template-path)
+         :templatename "meeting_note_1on1.org")
 
 	("r" "Reviews")
-        ("rp" "Review: daily planing" entry (file+datetree my-gtd-reviews)
-         (file "~/Documents/org-mode/_templates/morning_review.org"))
-        ("rd" "Review: Daily Afternoon Review" entry (file+datetree my-gtd-reviews)
-         (file "~/Documents/org-mode/_templates/dailyreview.org"))
-        ("rw" "Review: Weekly Review" entry (file+datetree my-gtd-reviews)
-         (file "~/Documents/org-mode/_templates/weeklyreview.org"))
+        ("rp" "Review: daily planing" plain
+         (file+datetree my-gtd-reviews)
+         (function my/org-template-path)
+         :templatename "morning_review.org")
+
+        ("rd" "Reviews: daily afternoon review" plain
+         (file+datetree my-gtd-reviews)
+         (function my/org-template-path)
+         :templatename "dailyreview.org")
+
+        ("rw" "Reviews: weekly review" plain
+         (file+datetree my-gtd-reviews)
+         (function my/org-template-path)
+         :templatename "weeklyreview.org")
 
         ("T" "Tickler" entry (file+headline my-gtd-tickler "Tickler")
          "* %i%? \n %U")
 
 	("c" "org-protocol capturing")
-           ("cp" "Protocol" entry (file my-gtd-inbox)
-                    "* [[%:link][%^{Title}]]
+        ("cp" "Protocol" entry (file my-gtd-inbox)
+         "* [[%:link][%^{Title}]]
 :PROPERTIES:
 :CREATED: %U
 :SOURCE:  %:link
@@ -312,8 +311,8 @@ typical word processor."
 #+END_QUOTE
 
 %?")
-            ("cl" "Protocol Link" entry (file my-gtd-inbox)
-                    "* [[%:link][%^{Title}]]
+        ("cl" "Protocol Link" entry (file my-gtd-inbox)
+         "* [[%:link][%^{Title}]]
 :PROPERTIES:
 :CREATED: %U
 :SOURCE:  %:link
