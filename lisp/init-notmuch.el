@@ -13,17 +13,12 @@
 (require 'notmuch)
 
 ;; Sending e-mail
- (setq mail-envelope-from "header")
  (setq mail-specify-envelope-from t)
- (setq message-sendmail-envelope-from "header")
  (setq send-mail-function (quote sendmail-send-it))
- (setq sendmail-program "/usr/local/bin/msmtp")
 
 ;; Notmuch
  (setq mm-inline-large-images (quote resize))
  (setq notmuch-archive-tags (quote ("-inbox" "+archive" "-fyi" "-todo")))
- (setq notmuch-draft-folder "jneuhalfen@brabbler.ag/Drafts")
- (setq notmuch-fcc-dirs "jneuhalfen@brabbler.ag/Sent")
  (setq notmuch-hello-sections
    (quote
     (notmuch-hello-insert-saved-searches notmuch-hello-insert-search notmuch-hello-insert-recent-searches notmuch-hello-insert-alltags notmuch-hello-insert-footer)))
