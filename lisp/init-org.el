@@ -109,8 +109,6 @@
 (setq org-id-link-to-org-use-id t)
 (setq org-id-method  'uuid)
 (setq org-id-track-globally t)
-(setq org-id-locations-file (convert-standard-filename
-                             "~/Documents/org-mode/_org-internal/org-id-locations"))
 
 ;; Lots of stuff from http://doc.norang.ca/org-mode.html
 
