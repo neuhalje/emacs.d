@@ -1,13 +1,24 @@
-;;
-;; e-mail
-;;
+;;; init-notmuch.el --- configure notmuch mail
 
+;;; Commentary:
+;;; Use the notmuch version your OS provides - the (M)ELPA version very likely
+;;; does not match the binary.
+
+
+;;; Code:
+
+
+
+(when (not *is-a-win*)
 
 ;; Install notmuch via the operating system to keep it synchronized with the
 ;; lib!
 (when *is-a-mac*
   (add-to-list 'load-path "/usr/local/share/emacs/site-lisp/notmuch")
-)
+  )
+;;
+;; (when *is-a-win* (add-to-list 'load-path "//wsl$/Ubuntu/usr/share/emacs/site-lisp/elpa-src/notmuch-0.26"))
+;;
 
 ;; Mail
 (require 'notmuch)
@@ -135,21 +146,22 @@
 
 
 (define-key notmuch-search-mode-map "d"
-   (lambda ()
-     "toggle deleted tag for thread"
-     (interactive)
-     (if (member "deleted" (notmuch-search-get-tags))
-         (notmuch-search-tag "-deleted")
-       (notmuch-search-tag '("+deleted" "-inbox" "-unread")))
-     (next-line)))
-   (define-key notmuch-show-mode-map "d"
-     (lambda ()
-       "toggle deleted tag for message"
-       (interactive)
-       (if (member "deleted" (notmuch-show-get-tags))
-           (notmuch-show-tag "-deleted")
-         (notmuch-show-tag '("+deleted" "-inbox" "-unread")))))
+  (lambda ()
+    "toggle deleted tag for thread"
+    (interactive)
+    (if (member "deleted" (notmuch-search-get-tags))
+        (notmuch-search-tag "-deleted")
+      (notmuch-search-tag '("+deleted" "-inbox" "-unread")))
+    (next-line)))
+(define-key notmuch-show-mode-map "d"
+  (lambda ()
+    "toggle deleted tag for message"
+    (interactive)
+    (if (member "deleted" (notmuch-show-get-tags))
+        (notmuch-show-tag "-deleted")
+      (notmuch-show-tag '("+deleted" "-inbox" "-unread")))))
 
+)
 
 (provide 'init-notmuch)
 ;;; init-notmuch.el ends here
