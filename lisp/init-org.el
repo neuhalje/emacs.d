@@ -27,18 +27,20 @@
 (require-package 'org-plus-contrib)
 
 (after-load 'org
-            (nconc org-modules
-                   '(
-                     org-capture
-                     org-habit
-                     org-id
-                     org-protocol
-                     org-w3m
-                     org-notmuch
-                     org-secretary
-                     ))
-            )
-
+  (nconc org-modules
+         '(
+           org-capture
+           org-habit
+           org-id
+           org-protocol
+           org-w3m
+           org-notmuch
+           org-secretary
+           org-bullets
+           ))
+  )
+(require-package 'org-bullets)
+(add-hook 'org-mode-hook 'org-bullets-mode)
 (when *is-a-mac*
   (maybe-require-package 'grab-mac-link))
 
