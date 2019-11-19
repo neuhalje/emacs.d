@@ -53,7 +53,7 @@
     )
   )
 
-(defconst my-possible-document-roots (list "~" "%HOME" "$HOME" "$USERPROFILE" "$APPDATA"))
+(defconst my-possible-document-roots (list "~" "%HOME" "$HOME" "$USERPROFILE" "$APPDATA" "/mnt/c/users/$USER"))
 
 (defun my-find-document-root-with-path (with-postfix-path)
   "Return a possible document root, e.g. ~/Documents that contains inside it a sub-path WITH-POSTFIX-PATH."
