@@ -260,6 +260,9 @@ typical word processor."
         ("j" "Journal" entry (file+datetree my-gtd-journal)
          "* %?\nEntered on %U\n  %i")
 
+        ("l" "org-link as todo" entry (file my-gtd-inbox)
+         "* %?\nEntered on %U\n  %i\n%a")
+
 	("n" "Notes")
         ("nn" "Note" entry (file my-gtd-inbox)
          "* NOTE %?\nEntered on %U\n  %i
