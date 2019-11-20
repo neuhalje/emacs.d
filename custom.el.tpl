@@ -114,7 +114,17 @@
   )
 (when *is-a-win*
   ;;  (add-to-list 'load-path "//wsl$/Ubuntu/usr/share/emacs/site-lisp/elpa-src/notmuch-0.29.1")
-)
+  )
 
+(when *is-a-linux*
+;; https://github.com/dfeich/org-screenshot
+  (require-package 'org-attach-screenshot)
+  (setq org-attach-screenshot-dirfunction
+        (lambda ()
+          (progn (assert (buffer-file-name))
+                 (concat (file-name-sans-extension (buffer-file-name))
+                         "_att"))))
+
+  )
 (provide 'custom)
 ;;; custom.el ends here
