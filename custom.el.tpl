@@ -19,10 +19,22 @@
  '(column-number-mode t)
  '(cua-mode t nil (cua-base))
  '(custom-enabled-themes (quote (sanityinc-tomorrow-bright)))
- '(menu-bar-mode nil)
+ '(message-sendmail-envelope-from nil)
+ '(notmuch-draft-folder "drafts")
+ '(notmuch-fcc-dirs
+ (quote
+ (("jens.*@example.com" . "jens@example.com/Sent +sent -unread")
+ ("JensNeuhalfen@example.org" . "jensneuhalfen@example.org/Sent +sent -unread")
+ (".*" . "EDIT-ME"))))
+ '(notmuch-maildir-use-notmuch-insert t)
+ '(sendmail-program "/usr/bin/msmtp")
  '(session-use-package t nil (session))
- '(show-paren-mode t)
- '(tool-bar-mode nil))
+ '(user-mail-address "jens@example.com")
+
+'(menu-bar-mode nil)
+'(session-use-package t nil (session))
+'(show-paren-mode t)
+'(tool-bar-mode nil))
 
 (defconst my-org-context-project-foo
   '(
